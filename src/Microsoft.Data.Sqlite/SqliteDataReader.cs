@@ -83,7 +83,7 @@ namespace Microsoft.Data.Sqlite
 #if NET451
             return new DbEnumerator(this);
 #else
-    // TODO: Remove when the System.Data.Common includes DbEnumerator
+            // TODO: Remove when the System.Data.Common includes DbEnumerator
             throw new NotImplementedException();
 #endif
         }
@@ -313,7 +313,7 @@ namespace Microsoft.Data.Sqlite
         }
 
         public override float GetFloat(int ordinal) => (float)GetDouble(ordinal);
-        public override Guid GetGuid(int ordinal) => new Guid(GetBlob(ordinal));
+        public override Guid GetGuid(int ordinal) => new Guid(GetGuidBlob(ordinal));
         public override short GetInt16(int ordinal) => (short)GetInt64(ordinal);
         public override int GetInt32(int ordinal) => (int)GetInt64(ordinal);
 
@@ -494,6 +494,20 @@ namespace Microsoft.Data.Sqlite
             }
 
             return NativeMethods.sqlite3_column_blob(_stmt, ordinal);
+        }
+
+        private string GetGuidBlob(int ordinal)
+        {
+            if (IsDBNull(ordinal))
+            {
+                throw new InvalidCastException();
+            }
+
+            string blob = System.Text.Encoding.UTF8.GetString(NativeMethods.sqlite3_column_blob(_stmt, ordinal));
+            if (blob.Length > 36)
+                return blob.Substring(0, 36);
+            else
+                return blob;
         }
     }
 }
